@@ -1,0 +1,24 @@
+# Interface
+streamlit>=1.32.0
+
+# Scraping
+beautifulsoup4>=4.12.3
+selenium>=4.18.1
+webdriver-manager>=4.0.1
+requests>=2.31.0
+lxml>=5.1.0
+tqdm>=4.66.2
+
+# RAG & Vectorstore
+chromadb>=0.4.24
+tiktoken>=0.6.0
+
+# LLM local Ollama
+ollama>=0.1.9
+
+# Embeddings similarité (RAG adaptatif)
+numpy>=1.26.4
+scikit-learn>=1.4.2
+
+# Configuration
+python-dotenv>=1.0.1

@@ -1,0 +1,39 @@
+# MANIFESTE KUBERNETES DE TEST - CONFIGURATION VULNÉRABLE (POUR AUDIT DE SÉCURITÉ)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-api-service
+  namespace: default
+  labels:
+    app: legacy-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: legacy-api
+  template:
+    metadata:
+      labels:
+        app: legacy-api
+    spec:
+      containers:
+        - name: legacy-api-container
+          image: legacy-api-image:v1.0.4
+          ports:
+            - containerPort: 8080
+
+          # INSECURITÉ : Pas de limites de ressources définies (risque de déni de service / DoS de l'hôte)
+          # resources:
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "512Mi"
+
+          # INSECURITÉ : Sécurité du conteneur manquante (exécution en tant que root par défaut, système de fichier en écriture)
+          securityContext:
+            privileged: true # Privilégié, accès complet à l'hôte ! (Extrêmement dangereux)
+            runAsNonRoot: false # Exécuté en tant que ROOT
+            readOnlyRootFilesystem: false # Système de fichier racine modifiable (écriture)
+            allowPrivilegeEscalation: true # Autorise l'élévation de privilèges
+
+---
+# INSECURITÉ : Pas de NetworkPolicy définie pour isoler ce pod des autres namespaces du cluster

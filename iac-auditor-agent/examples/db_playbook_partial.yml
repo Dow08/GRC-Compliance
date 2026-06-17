@@ -1,0 +1,30 @@
+# PLAYBOOK ANSIBLE PARTIELLEMENT CONFORME (DATABASE SECURITY)
+- name: Deploy Partially Secure PostgreSQL Service
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Install PostgreSQL server
+      ansible.builtin.package:
+        name: postgresql-15
+        state: present
+
+    # BONNE PRATIQUE : Mot de passe chiffré via MD5 au lieu de texte en clair
+    - name: Configure secure superuser credentials
+      postgresql_user:
+        name: postgres
+        password: "md53175b5b03513364f9b2d9d1463cf3a1a" # Mot de passe haché en MD5 (sécurisé)
+        role_attr_flags: "SUPERUSER"
+
+    # BONNE PRATIQUE : Écoute réseau restreinte à localhost (127.0.0.1) pour empêcher l'accès extérieur direct
+    - name: Configure secure listener binding
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "listen_addresses = '127.0.0.1'"
+        state: present
+
+    # INSECURITÉ : Chiffrement TLS (SSL) désactivé (pas de chiffrement en transit)
+    - name: Disable TLS encryption
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "ssl = off"
+        state: present

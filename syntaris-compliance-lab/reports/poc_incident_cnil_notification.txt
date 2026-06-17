@@ -1,0 +1,28 @@
+=====================================================================
+          PROJET DE DECLARATION DE VIOLATION DE DONNEES (CNIL)
+                  CONFORME A L'ARTICLE 33 DU RGPD
+=====================================================================
+Date de Generation : 2026-05-27 08:56:45
+Statut de la declaration : Initiale (Notification dans les 72h)
+Organisme Responsable du Traitement : Syntaris Group Ltd
+Nom du Data Protection Officer (DPO) : seallia81@gmail.com (DPO Interimaire)
+---------------------------------------------------------------------
+1. NATURE DE LA VIOLATION
+   - Type d incident : Acces non autorise / Exfiltration de donnees
+   - Date de la decouverte de l incident : 2026-05-27T08:10:01Z
+   - Source de la detection : Analyse automatisee des logs API
+   - Categorie de donnees personnelles concernees :
+       * Donnees d identite (Documents de verification KYC)
+       * Gabarits Biometriques bruts de reconnaissance faciale (Sensibles, Art 9)
+   - Nombre approximatif de personnes concernees : ~1250 clients fintech
+---------------------------------------------------------------------
+2. CONSEQUENCES PROBABLES
+   - Risque eleve d usurpation d identite cyber-bancaire.
+   - Risque de contournement des systemes de verification d identite tiers.
+---------------------------------------------------------------------
+3. MESURES DE REMEDIATION PRISES OU ENVISAGEES IMMEDIATEMENT
+   - [EFFECTUÉ] Revocation immediate de la cle d API compromise (sk_test_dev_98ab).
+   - [EFFECTUÉ] Blocage au niveau pare-feu (WAF) de l IP malveillante (198.51.100.22).
+   - [EN COURS] Notification des utilisateurs impactes sans delai injustifie (Art 34).
+   - [PLANIFIÉ] Migration vers un chiffrement des donnees biometriques avec cles uniques.
+=====================================================================

@@ -1,0 +1,38 @@
+# Données sensibles
+.env
+
+# Environnement virtuel
+venv/
+
+# Données générées (volumineuses)
+/data/vectorstore/
+/data/raw/
+/data/logs/
+
+# Fichiers runtime auto-générés
+scrape_history.json
+feedback.json
+file_hashes.json
+*.log
+
+# Apprentissage — optionnel à exclure selon usage
+# corrections.json  # Décommenter pour ne pas versionner les corrections
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

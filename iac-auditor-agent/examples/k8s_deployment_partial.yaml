@@ -1,0 +1,38 @@
+# MANIFESTE KUBERNETES PARTIELLEMENT SECURISE (K8S HARDENING)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secured-api-service
+  namespace: prod
+  labels:
+    app: secured-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: secured-api
+  template:
+    metadata:
+      labels:
+        app: secured-api
+    spec:
+      containers:
+        - name: secured-api-container
+          image: secured-api-image:v2.1.0
+          ports:
+            - containerPort: 8080
+
+          # BONNE PRATIQUE : Limites de ressources définies (Empêche le DoS du cluster)
+          resources:
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+          # INSECURITÉ PARTIELLE : Privilèges normaux mais élévation de privilèges autorisée par erreur
+          securityContext:
+            privileged: false # CORRECT (Non privilégié)
+            runAsNonRoot: true # CORRECT (Exécuté en non-root)
+            allowPrivilegeEscalation: true # ERREUR : Autorise toujours l'escalade de privilèges !

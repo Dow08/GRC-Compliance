@@ -1,0 +1,25 @@
+# PLAYBOOK ANSIBLE COMPLETEMENT CONFORME (SSH HARDENING)
+- name: Deploy Secure SSH Service
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure SSH server package is installed
+      ansible.builtin.package:
+        name: openssh-server
+        state: present
+
+    # CONFORMITÉ : Désactivation stricte de la connexion Root
+    - name: Disallow root SSH login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: "PermitRootLogin no"
+        state: present
+
+    # CONFORMITÉ : Désactivation stricte de l'authentification par mot de passe (clés SSH obligatoires)
+    - name: Disallow password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: "PasswordAuthentication no"
+        state: present

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport d'Audit GRC : Database Security Hardening</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151c2c;
+            --border-color: #232d42;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success-color: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --warning-color: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+            --error-color: #ef4444;
+            --error-glow: rgba(239, 68, 68, 0.15);
+            --code-bg: #070a13;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-size: 28px; font-weight: 700; margin: 0 0 10px 0; letter-spacing: -0.5px; }
+        .subtitle { color: var(--text-muted); margin: 0; font-size: 16px; }
+        .badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .compliant { background-color: var(--success-glow); color: var(--success-color); border: 1px solid var(--success-color); }
+        .partial { background-color: var(--warning-glow); color: var(--warning-color); border: 1px solid var(--warning-color); }
+        .non-compliant { background-color: var(--error-glow); color: var(--error-color); border: 1px solid var(--error-color); }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            font-size: 18px; margin-top: 0; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 10px;
+        }
+        .meta-item { margin-bottom: 15px; }
+        .meta-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px; }
+        .meta-value { font-size: 14px; font-weight: 500; }
+        .risk-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+        .risk-low { background-color: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .risk-medium { background-color: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .risk-high { background-color: rgba(239, 68, 68, 0.2); color: var(--error-color); }
+        .gap-box {
+            background-color: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--error-color);
+            padding: 15px 20px; border-radius: 0 8px 8px 0; margin-bottom: 30px; font-size: 15px;
+        }
+        .gap-box.compliant-box { border-left: 4px solid var(--success-color); background-color: rgba(16, 185, 129, 0.05); }
+        pre { background-color: var(--code-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; overflow-x: auto; margin: 0; }
+        code { font-family: 'Courier New', Courier, monospace; font-size: 13.5px; color: #e5e7eb; }
+        .code-container { position: relative; }
+        .copy-btn {
+            position: absolute; top: 10px; right: 10px; background-color: var(--card-bg);
+            border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 8px;
+            font-size: 11px; border-radius: 4px; cursor: pointer;
+        }
+        footer { text-align: center; margin-top: 50px; color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--border-color); padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Rapport d'Audit de Conformité GRC</h1>
+                <p class="subtitle">Analyse automatisée de configuration de sécurité</p>
+            </div>
+            <div>
+                <span class="badge non-compliant">NON CONFORME</span>
+            </div>
+        </header>
+        <div class="grid">
+            <div class="card">
+                <h2>Rapport d'Audit Technique</h2>
+                <div class="meta-label">Écarts techniques identifiés (Gaps)</div>
+                <div class="gap-box ">
+                    The configuration of PostgreSQL server exposes several security vulnerabilities, including: 
+- **Plaintext password for superuser:** The database administrator's password is stored in plain text. This poses a significant risk as it can be easily compromised.
+- **Open listener address:** The database service listens on all network interfaces (0.0.0.0), making it vulnerable to unauthorized access. 
+- **Disable TLS encryption for legacy clients:** Disabling TLS encryption for legacy clients is not recommended and increases the attack surface. This should only be done if there are specific reasons and proper mitigation strategies are in place.
+- **Trust access rule for subnet:** The trust access rule allows all users to connect without authentication, increasing the risk of unauthorized access.
+                </div>
+                <div class="meta-label" style="margin-bottom: 8px;">Plan de Remédiation Technique Préconisé</div>
+                <div class="code-container">
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('remediation-code').innerText)">Copier</button>
+                    <pre><code id="remediation-code">Edit the configuration files to implement secure practices. For example: 
+- **Password Management:** Use a strong password for the superuser and store it securely using a password manager or encryption tool.
+- **Network Security:** Configure the database server to listen only on the internal network (e.g., 192.168.0.0/24) and restrict access to authorized users only.
+- **TLS Encryption:** Enable TLS encryption for all connections to secure communication between clients and the database server.</code></pre>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Métadonnées GRC</h2>
+                <div class="meta-item">
+                    <span class="meta-label">Actif Technologique</span>
+                    <span class="meta-value">Database Security Hardening</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Niveau de Risque</span>
+                    <span class="meta-value"><span class="risk-badge risk-high">RISQUE ÉLEVÉ</span></span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Règles ISO 27001</span>
+                    <span class="meta-value">ISO 27001:2022 A.8.24 (Use of Cryptography), ISO 27001:2022 A.8.15 (Logging), ISO 27001:2022 A.8.2 (User Access Rights)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Exigences NIS2</span>
+                    <span class="meta-value">NIS2 Article 21 (Data Security & Cryptography / Access Controls)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">CVEs / CWEs Associés</span>
+                    <span class="meta-value" style="color: var(--warning-color); font-weight: bold;">CWE-256, CWE-319, CWE-284</span>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="margin-top: 30px;">
+            <h2>Configuration Source Évaluée</h2>
+            <pre><code># FICHIPER PLAYBOOK DE BASE DE DONNÉES - CONFIGURATION VULNÉRABLE (POUR AUDIT DE SÉCURITÉ)
+- name: Deploy PostgreSQL Database Service
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Install PostgreSQL server
+      ansible.builtin.package:
+        name: postgresql-15
+        state: present
+
+    # INSECURITÉ : Mot de passe administrateur en clair dans le fichier de config
+    - name: Initialize database superuser credentials
+      postgresql_user:
+        name: postgres
+        password: "SuperSecretPassword123!"
+        role_attr_flags: "SUPERUSER"
+
+    # INSECURITÉ : Le service écoute sur toutes les interfaces réseau (0.0.0.0) au lieu de localhost/réseau interne
+    - name: Configure database listener address
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "listen_addresses = '*'"
+        state: present
+
+    # INSECURITÉ : Désactivation explicite du chiffrement TLS (SSL) pour simplifier les connexions
+    - name: Disable TLS encryption for legacy clients
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "ssl = off"
+        state: present
+
+    # INSECURITÉ : Règle d'accès réseau ouverte à la terre entière sans mot de passe (trust)
+    - name: Configure trust access rule for subnet
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/pg_hba.conf
+        line: "host all all 0.0.0.0/0 trust"
+        state: present
+</code></pre>
+        </div>
+        <footer>
+            <p>Généré automatiquement par l'analyseur autonome GRC Cybersecurity Compliance Auditor.</p>
+        </footer>
+    </div>
+</body>
+</html>

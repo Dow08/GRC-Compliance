@@ -1,0 +1,37 @@
+# FICHIPER PLAYBOOK DE BASE DE DONNÉES - CONFIGURATION VULNÉRABLE (POUR AUDIT DE SÉCURITÉ)
+- name: Deploy PostgreSQL Database Service
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Install PostgreSQL server
+      ansible.builtin.package:
+        name: postgresql-15
+        state: present
+
+    # INSECURITÉ : Mot de passe administrateur en clair dans le fichier de config
+    - name: Initialize database superuser credentials
+      postgresql_user:
+        name: postgres
+        password: "SuperSecretPassword123!"
+        role_attr_flags: "SUPERUSER"
+
+    # INSECURITÉ : Le service écoute sur toutes les interfaces réseau (0.0.0.0) au lieu de localhost/réseau interne
+    - name: Configure database listener address
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "listen_addresses = '*'"
+        state: present
+
+    # INSECURITÉ : Désactivation explicite du chiffrement TLS (SSL) pour simplifier les connexions
+    - name: Disable TLS encryption for legacy clients
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "ssl = off"
+        state: present
+
+    # INSECURITÉ : Règle d'accès réseau ouverte à la terre entière sans mot de passe (trust)
+    - name: Configure trust access rule for subnet
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/pg_hba.conf
+        line: "host all all 0.0.0.0/0 trust"
+        state: present

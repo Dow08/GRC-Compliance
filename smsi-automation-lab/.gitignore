@@ -1,0 +1,71 @@
+# ============================================================
+# .gitignore — GRC SMSI Automatisé — TechShop SAS
+# ============================================================
+
+# ── Secrets et credentials (NE JAMAIS COMMITTER) ──────────
+docker/.env
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+.venv/
+venv/
+env/
+
+# ── Node / npm ─────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS ─────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── IDE / Éditeurs ─────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Claude Code (fichiers internes, ne pas versionner) ─────
+CLAUDE.md
+.claude/
+
+# ── Docker volumes (données persistantes locales) ──────────
+docker/data/
+docker/postgres_data/
+
+# ── Rapports générés (reproductibles via les scripts) ──────
+poc/api-automation/rapport-conformite-*.md
+poc/risk-matrix/rapport-risques-*.md
+
+# ── Livrables PDF (régénérables avec generate_pdfs.py) ─────
+# Décommenter si on ne veut pas versionner les PDF (fichiers lourds)
+# livrables-pdf/
+
+# ── Logs ───────────────────────────────────────────────────
+*.log
+logs/

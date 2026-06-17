@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Global : Sécurité et Conformité GRC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151c2c;
+            --border-color: #232d42;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success-color: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --warning-color: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+            --error-color: #ef4444;
+            --error-glow: rgba(239, 68, 68, 0.15);
+            --code-bg: #070a13;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-size: 28px; font-weight: 700; margin: 0 0 10px 0; letter-spacing: -0.5px; }
+        .subtitle { color: var(--text-muted); margin: 0; font-size: 16px; }
+        
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr) 2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .kpi-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .kpi-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            font-size: 18px; margin-top: 0; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border-color);
+        }
+        td {
+            padding: 16px 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        .compliant { background-color: var(--success-glow); color: var(--success-color); border: 1px solid var(--success-color); }
+        .partial { background-color: var(--warning-glow); color: var(--warning-color); border: 1px solid var(--warning-color); }
+        .non-compliant { background-color: var(--error-glow); color: var(--error-color); border: 1px solid var(--error-color); }
+        
+        .risk-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .risk-low { background-color: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .risk-medium { background-color: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .risk-high { background-color: rgba(239, 68, 68, 0.2); color: var(--error-color); }
+        
+        .tech-badge {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        .gap-box {
+            background-color: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--error-color);
+            padding: 15px 20px; border-radius: 0 8px 8px 0; margin-bottom: 20px; font-size: 14px;
+        }
+        .gap-box.compliant-box { border-left: 4px solid var(--success-color); background-color: rgba(16, 185, 129, 0.05); }
+        
+        pre { background-color: var(--code-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; overflow-x: auto; margin: 0; }
+        code { font-family: 'Courier New', Courier, monospace; font-size: 13.5px; color: #e5e7eb; }
+        .code-container { position: relative; }
+        .copy-btn {
+            position: absolute; top: 10px; right: 10px; background-color: var(--card-bg);
+            border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 8px;
+            font-size: 11px; border-radius: 4px; cursor: pointer;
+        }
+        footer { text-align: center; margin-top: 50px; color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--border-color); padding-top: 20px; }
+        
+        .score-circle {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 6px solid #232d42; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 700; margin: 0 auto;
+        }
+    </style>
+    <script>
+        function toggleAccordion(idx) {
+            var content = document.getElementById("accordion-" + idx);
+            var label = document.querySelector(".open-label-" + idx);
+            if (content.style.display === "none" || content.style.display === "") {
+                content.style.display = "table-row";
+                if (label) label.textContent = "Fermer";
+            } else {
+                content.style.display = "none";
+                if (label) label.textContent = "Cliquer pour ouvrir";
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Tableau de Bord de Conformité GRC</h1>
+                <p class="subtitle">Analyse de sécurité multi-fichiers : <code>examples</code></p>
+            </div>
+            <div>
+                <div class="score-circle" style="border-color: #ef4444; color: #ef4444;">
+                    20%
+                </div>
+            </div>
+        </header>
+        
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-title">Fichiers Scannés</div>
+                <div class="kpi-value">5</div>
+            </div>
+            <div class="kpi-card" style="border-bottom: 4px solid var(--success-color);">
+                <div class="kpi-title">Conformes</div>
+                <div class="kpi-value" style="color: var(--success-color);">1</div>
+            </div>
+            <div class="kpi-card" style="border-bottom: 4px solid var(--warning-color);">
+                <div class="kpi-title">Partiels</div>
+                <div class="kpi-value" style="color: var(--warning-color);">0</div>
+            </div>
+            <div class="kpi-card" style="border-bottom: 4px solid var(--error-color);">
+                <div class="kpi-title">Non Conformes</div>
+                <div class="kpi-value" style="color: var(--error-color);">4</div>
+            </div>
+            <div class="kpi-card" style="text-align: left; display: flex; align-items: center; justify-content: center; font-size: 13.5px; color: var(--text-muted);">
+                Ce tableau de bord consolidé regroupe l'audit préventif de sécurité de votre dépôt d'infrastructure par rapport à ISO 27001 et NIS2.
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Inventaire des Fichiers et États d'Audit</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom du Fichier</th>
+                        <th>Type d'Actif</th>
+                        <th>Statut GRC</th>
+                        <th>Niveau de Risque</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+        <tr onclick="toggleAccordion(0)" style="cursor: pointer; transition: background-color 0.2s;">
+            <td style="font-weight: 600;">db_playbook.yml</td>
+            <td><span class="tech-badge">Database Security Hardening</span></td>
+            <td><span class="badge non-compliant">NON CONFORME</span></td>
+            <td><span class="risk-badge risk-high">HIGH</span></td>
+            <td style="color: var(--text-muted); font-size: 13px; text-align: right; font-weight: 600;">
+                <span class="open-label-0" style="color: var(--success-color);">Cliquer pour ouvrir</span>
+            </td>
+        </tr>
+        <tr id="accordion-0" style="display: none;">
+            <td colspan="5" style="padding: 0; border-bottom: 1px solid var(--border-color); background-color: rgba(7, 10, 19, 0.4);">
+                <div style="padding: 25px 20px; border-left: 4px solid var(--error-color);">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                        <div>
+                            <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Constats techniques de l'auditeur</h3>
+                            <div class="gap-box " style="margin-bottom: 20px;">
+                                The configuration of PostgreSQL server exposes several security vulnerabilities, including: 
+- **Plaintext password for superuser:** The database administrator's password is stored in plain text. This poses a significant risk as it can be easily compromised.
+- **Open listener address:** The database service listens on all network interfaces (0.0.0.0), making it vulnerable to unauthorized access. 
+- **Disable TLS encryption for legacy clients:** Disabling TLS encryption for legacy clients is not recommended and increases the attack surface. This should only be done if there are specific reasons and proper mitigation strategies are in place.
+- **Trust access rule for subnet:** The trust access rule allows all users to connect without authentication, increasing the risk of unauthorized access.
+                            </div>
+                            
+                            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Action de Remédiation Recommandée</h3>
+                            <div class="code-container">
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('remediation-0').innerText); event.stopPropagation();">Copier</button>
+                                <pre><code id="remediation-0">Edit the configuration files to implement secure practices. For example: 
+- **Password Management:** Use a strong password for the superuser and store it securely using a password manager or encryption tool.
+- **Network Security:** Configure the database server to listen only on the internal network (e.g., 192.168.0.0/24) and restrict access to authorized users only.
+- **TLS Encryption:** Enable TLS encryption for all connections to secure communication between clients and the database server.</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Normes ISO 27001</strong><br>ISO 27001:2022 A.8.24 (Use of Cryptography), ISO 27001:2022 A.8.15 (Logging), ISO 27001:2022 A.8.2 (User Access Rights)</p>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Directive NIS2</strong><br>NIS2 Article 21 (Data Security & Cryptography / Access Controls)</p>
+                            <p style="margin: 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">CVEs / CWEs</strong><br><span style="color: var(--warning-color); font-weight: bold;">CWE-256, CWE-319, CWE-284</span></p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px;">
+                        <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Fichier source audité</h3>
+                        <pre><code># FICHIPER PLAYBOOK DE BASE DE DONNÉES - CONFIGURATION VULNÉRABLE (POUR AUDIT DE SÉCURITÉ)
+- name: Deploy PostgreSQL Database Service
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Install PostgreSQL server
+      ansible.builtin.package:
+        name: postgresql-15
+        state: present
+
+    # INSECURITÉ : Mot de passe administrateur en clair dans le fichier de config
+    - name: Initialize database superuser credentials
+      postgresql_user:
+        name: postgres
+        password: "SuperSecretPassword123!"
+        role_attr_flags: "SUPERUSER"
+
+    # INSECURITÉ : Le service écoute sur toutes les interfaces réseau (0.0.0.0) au lieu de localhost/réseau interne
+    - name: Configure database listener address
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "listen_addresses = '*'"
+        state: present
+
+    # INSECURITÉ : Désactivation explicite du chiffrement TLS (SSL) pour simplifier les connexions
+    - name: Disable TLS encryption for legacy clients
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "ssl = off"
+        state: present
+
+    # INSECURITÉ : Règle d'accès réseau ouverte à la terre entière sans mot de passe (trust)
+    - name: Configure trust access rule for subnet
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/pg_hba.conf
+        line: "host all all 0.0.0.0/0 trust"
+        state: present
+</code></pre>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr onclick="toggleAccordion(1)" style="cursor: pointer; transition: background-color 0.2s;">
+            <td style="font-weight: 600;">db_playbook_partial.yml</td>
+            <td><span class="tech-badge">Database Security Hardening</span></td>
+            <td><span class="badge non-compliant">NON CONFORME</span></td>
+            <td><span class="risk-badge risk-high">HIGH</span></td>
+            <td style="color: var(--text-muted); font-size: 13px; text-align: right; font-weight: 600;">
+                <span class="open-label-1" style="color: var(--success-color);">Cliquer pour ouvrir</span>
+            </td>
+        </tr>
+        <tr id="accordion-1" style="display: none;">
+            <td colspan="5" style="padding: 0; border-bottom: 1px solid var(--border-color); background-color: rgba(7, 10, 19, 0.4);">
+                <div style="padding: 25px 20px; border-left: 4px solid var(--error-color);">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                        <div>
+                            <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Constats techniques de l'auditeur</h3>
+                            <div class="gap-box " style="margin-bottom: 20px;">
+                                The configuration disables TLS encryption, which leaves the database vulnerable to man-in-the-middle attacks. The use of MD5 for passwords is insecure and should be replaced with a strong cryptographic hashing algorithm like bcrypt or scrypt.
+                            </div>
+                            
+                            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Action de Remédiation Recommandée</h3>
+                            <div class="code-container">
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('remediation-1').innerText); event.stopPropagation();">Copier</button>
+                                <pre><code id="remediation-1">ansible.builtin.lineinfile -path=/etc/postgresql/15/main/postgresql.conf -line='ssl = on' -state=present</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Normes ISO 27001</strong><br>ISO 27001:2022 A.8.24 (Use of Cryptography), ISO 27001:2022 A.8.15 (Logging), ISO 27001:2022 A.8.2 (User Access Rights)</p>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Directive NIS2</strong><br>NIS2 Article 21 (Data Security & Cryptography / Access Controls)</p>
+                            <p style="margin: 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">CVEs / CWEs</strong><br><span style="color: var(--warning-color); font-weight: bold;">CWE-284 (open listener addresses), CWE-521 (weak passwords)</span></p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px;">
+                        <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Fichier source audité</h3>
+                        <pre><code># PLAYBOOK ANSIBLE PARTIELLEMENT CONFORME (DATABASE SECURITY)
+- name: Deploy Partially Secure PostgreSQL Service
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Install PostgreSQL server
+      ansible.builtin.package:
+        name: postgresql-15
+        state: present
+
+    # BONNE PRATIQUE : Mot de passe chiffré via MD5 au lieu de texte en clair
+    - name: Configure secure superuser credentials
+      postgresql_user:
+        name: postgres
+        password: "md53175b5b03513364f9b2d9d1463cf3a1a" # Mot de passe haché en MD5 (sécurisé)
+        role_attr_flags: "SUPERUSER"
+
+    # BONNE PRATIQUE : Écoute réseau restreinte à localhost (127.0.0.1) pour empêcher l'accès extérieur direct
+    - name: Configure secure listener binding
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "listen_addresses = '127.0.0.1'"
+        state: present
+
+    # INSECURITÉ : Chiffrement TLS (SSL) désactivé (pas de chiffrement en transit)
+    - name: Disable TLS encryption
+      ansible.builtin.lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "ssl = off"
+        state: present
+</code></pre>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr onclick="toggleAccordion(2)" style="cursor: pointer; transition: background-color 0.2s;">
+            <td style="font-weight: 600;">k8s_deployment.yaml</td>
+            <td><span class="tech-badge">Kubernetes Cluster Hardening</span></td>
+            <td><span class="badge non-compliant">NON CONFORME</span></td>
+            <td><span class="risk-badge risk-high">HIGH</span></td>
+            <td style="color: var(--text-muted); font-size: 13px; text-align: right; font-weight: 600;">
+                <span class="open-label-2" style="color: var(--success-color);">Cliquer pour ouvrir</span>
+            </td>
+        </tr>
+        <tr id="accordion-2" style="display: none;">
+            <td colspan="5" style="padding: 0; border-bottom: 1px solid var(--border-color); background-color: rgba(7, 10, 19, 0.4);">
+                <div style="padding: 25px 20px; border-left: 4px solid var(--error-color);">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                        <div>
+                            <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Constats techniques de l'auditeur</h3>
+                            <div class="gap-box " style="margin-bottom: 20px;">
+                                Missing NetworkPolicy to isolate the pod from other namespaces, leading to potential exposure and increased attack surface. Lack of resource limits (CPU/Memory) for containers, increasing risk of denial-of-service (DoS). Container security configuration with privileged execution mode (runAsNonRoot: false), system file modification (readOnlyRootFilesystem: false), and allowPrivilegeEscalation: true, poses a significant security risk.
+                            </div>
+                            
+                            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Action de Remédiation Recommandée</h3>
+                            <div class="code-container">
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('remediation-2').innerText); event.stopPropagation();">Copier</button>
+                                <pre><code id="remediation-2">kubectl create -f &lt;path/to/networkpolicy.yaml&gt;</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Normes ISO 27001</strong><br>ISO 27001:2022 A.8.20 (Network Security), ISO 27001:2022 A.8.22 (Web Filtering), ISO 27001:2022 A.8.12 (Data Leakage Prevention)</p>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Directive NIS2</strong><br>NIS2 Article 21 (Network Isolation & Access Policies)</p>
+                            <p style="margin: 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">CVEs / CWEs</strong><br><span style="color: var(--warning-color); font-weight: bold;">CWE-284, CWE-521</span></p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px;">
+                        <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Fichier source audité</h3>
+                        <pre><code># MANIFESTE KUBERNETES DE TEST - CONFIGURATION VULNÉRABLE (POUR AUDIT DE SÉCURITÉ)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-api-service
+  namespace: default
+  labels:
+    app: legacy-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: legacy-api
+  template:
+    metadata:
+      labels:
+        app: legacy-api
+    spec:
+      containers:
+        - name: legacy-api-container
+          image: legacy-api-image:v1.0.4
+          ports:
+            - containerPort: 8080
+
+          # INSECURITÉ : Pas de limites de ressources définies (risque de déni de service / DoS de l'hôte)
+          # resources:
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "512Mi"
+
+          # INSECURITÉ : Sécurité du conteneur manquante (exécution en tant que root par défaut, système de fichier en écriture)
+          securityContext:
+            privileged: true # Privilégié, accès complet à l'hôte ! (Extrêmement dangereux)
+            runAsNonRoot: false # Exécuté en tant que ROOT
+            readOnlyRootFilesystem: false # Système de fichier racine modifiable (écriture)
+            allowPrivilegeEscalation: true # Autorise l'élévation de privilèges
+
+---
+# INSECURITÉ : Pas de NetworkPolicy définie pour isoler ce pod des autres namespaces du cluster
+</code></pre>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr onclick="toggleAccordion(3)" style="cursor: pointer; transition: background-color 0.2s;">
+            <td style="font-weight: 600;">k8s_deployment_partial.yaml</td>
+            <td><span class="tech-badge">Kubernetes Cluster Hardening</span></td>
+            <td><span class="badge non-compliant">NON CONFORME</span></td>
+            <td><span class="risk-badge risk-high">HIGH</span></td>
+            <td style="color: var(--text-muted); font-size: 13px; text-align: right; font-weight: 600;">
+                <span class="open-label-3" style="color: var(--success-color);">Cliquer pour ouvrir</span>
+            </td>
+        </tr>
+        <tr id="accordion-3" style="display: none;">
+            <td colspan="5" style="padding: 0; border-bottom: 1px solid var(--border-color); background-color: rgba(7, 10, 19, 0.4);">
+                <div style="padding: 25px 20px; border-left: 4px solid var(--error-color);">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                        <div>
+                            <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Constats techniques de l'auditeur</h3>
+                            <div class="gap-box " style="margin-bottom: 20px;">
+                                The `securityContext` for the container is configured to allow privilege escalation (`allowPrivilegeEscalation: true`) which is a major security risk. This configuration should be reviewed and corrected.
+                            </div>
+                            
+                            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Action de Remédiation Recommandée</h3>
+                            <div class="code-container">
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('remediation-3').innerText); event.stopPropagation();">Copier</button>
+                                <pre><code id="remediation-3">sed -i 's/allowPrivilegeEscalation: true/allowPrivilegeEscalation: false/' deployment/securityContext.yaml</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Normes ISO 27001</strong><br>ISO 27001:2022 A.8.20 (Network Security), ISO 27001:2022 A.8.22 (Web Filtering), ISO 27001:2022 A.8.12 (Data Leakage Prevention)</p>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Directive NIS2</strong><br>NIS2 Article 21 (Network Isolation & Access Policies)</p>
+                            <p style="margin: 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">CVEs / CWEs</strong><br><span style="color: var(--warning-color); font-weight: bold;">CWE-701 (Improper Privilege Management)</span></p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px;">
+                        <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Fichier source audité</h3>
+                        <pre><code># MANIFESTE KUBERNETES PARTIELLEMENT SECURISE (K8S HARDENING)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secured-api-service
+  namespace: prod
+  labels:
+    app: secured-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: secured-api
+  template:
+    metadata:
+      labels:
+        app: secured-api
+    spec:
+      containers:
+        - name: secured-api-container
+          image: secured-api-image:v2.1.0
+          ports:
+            - containerPort: 8080
+
+          # BONNE PRATIQUE : Limites de ressources définies (Empêche le DoS du cluster)
+          resources:
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+          # INSECURITÉ PARTIELLE : Privilèges normaux mais élévation de privilèges autorisée par erreur
+          securityContext:
+            privileged: false # CORRECT (Non privilégié)
+            runAsNonRoot: true # CORRECT (Exécuté en non-root)
+            allowPrivilegeEscalation: true # ERREUR : Autorise toujours l'escalade de privilèges !
+</code></pre>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+        <tr onclick="toggleAccordion(4)" style="cursor: pointer; transition: background-color 0.2s;">
+            <td style="font-weight: 600;">ssh_playbook_compliant.yml</td>
+            <td><span class="tech-badge">SSH Server Hardening</span></td>
+            <td><span class="badge compliant">CONFORME</span></td>
+            <td><span class="risk-badge risk-low">LOW</span></td>
+            <td style="color: var(--text-muted); font-size: 13px; text-align: right; font-weight: 600;">
+                <span class="open-label-4" style="color: var(--success-color);">Cliquer pour ouvrir</span>
+            </td>
+        </tr>
+        <tr id="accordion-4" style="display: none;">
+            <td colspan="5" style="padding: 0; border-bottom: 1px solid var(--border-color); background-color: rgba(7, 10, 19, 0.4);">
+                <div style="padding: 25px 20px; border-left: 4px solid var(--success-color);">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+                        <div>
+                            <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">Constats techniques de l'auditeur</h3>
+                            <div class="gap-box compliant-box" style="margin-bottom: 20px;">
+                                La configuration respecte parfaitement les exigences de sécurité du référentiel GRC.
+                            </div>
+                            
+                            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Action de Remédiation Recommandée</h3>
+                            <div class="code-container">
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('remediation-4').innerText); event.stopPropagation();">Copier</button>
+                                <pre><code id="remediation-4"></code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Normes ISO 27001</strong><br>ISO 27001:2022 A.5.15 (Access Control), ISO 27001:2022 A.8.20 (Network Security)</p>
+                            <p style="margin: 0 0 12px 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Directive NIS2</strong><br>NIS2 Article 21 (Cryptography & Access Policies)</p>
+                            <p style="margin: 0; font-size: 13px;"><strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">CVEs / CWEs</strong><br><span style="color: var(--warning-color); font-weight: bold;">None</span></p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px;">
+                        <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.5px;">Fichier source audité</h3>
+                        <pre><code># PLAYBOOK ANSIBLE COMPLETEMENT CONFORME (SSH HARDENING)
+- name: Deploy Secure SSH Service
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure SSH server package is installed
+      ansible.builtin.package:
+        name: openssh-server
+        state: present
+
+    # CONFORMITÉ : Désactivation stricte de la connexion Root
+    - name: Disallow root SSH login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: "PermitRootLogin no"
+        state: present
+
+    # CONFORMITÉ : Désactivation stricte de l'authentification par mot de passe (clés SSH obligatoires)
+    - name: Disallow password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: "PasswordAuthentication no"
+        state: present
+</code></pre>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </div>
+        
+        <footer>
+            <p>Généré automatiquement par l'analyseur autonome GRC Cybersecurity Compliance Auditor.</p>
+        </footer>
+    </div>
+</body>
+</html>

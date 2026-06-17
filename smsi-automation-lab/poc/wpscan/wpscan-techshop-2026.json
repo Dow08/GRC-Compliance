@@ -1,0 +1,481 @@
+{
+  "banner": {
+    "description": "WordPress Security Scanner",
+    "version": "4.0.0",
+    "sponsor": "An Automattic endeavor"
+  },
+  "start_time": 1780479751,
+  "start_memory": 55435264,
+  "command_line": "wpscan --url http://localhost:8080 --enumerate p,t,u --plugins-detection aggressive --format json",
+  "hostname": "docker-desktop",
+  "target_url": "http://localhost:8080/",
+  "target_ip": "::1",
+  "effective_url": "http://localhost:8080/",
+  "interesting_findings": [
+    {
+      "url": "http://localhost:8080/",
+      "to_s": "Headers",
+      "type": "headers",
+      "found_by": "Headers (Passive Detection)",
+      "confidence": 100,
+      "confirmed_by": {
+
+      },
+      "references": {
+
+      },
+      "interesting_entries": [
+        "Server: Apache/2.4.57 (Debian)",
+        "X-Powered-By: PHP/8.1.27"
+      ]
+    },
+    {
+      "url": "http://localhost:8080/xmlrpc.php",
+      "to_s": "XML-RPC seems to be enabled: http://localhost:8080/xmlrpc.php",
+      "type": "xmlrpc",
+      "found_by": "Direct Access (Aggressive Detection)",
+      "confidence": 100,
+      "confirmed_by": {
+
+      },
+      "references": {
+        "url": [
+          "http://codex.wordpress.org/XML-RPC_Pingback_API"
+        ],
+        "metasploit": [
+          "auxiliary/scanner/http/wordpress_ghost_scanner",
+          "auxiliary/dos/http/wordpress_xmlrpc_dos",
+          "auxiliary/scanner/http/wordpress_xmlrpc_login",
+          "auxiliary/scanner/http/wordpress_pingback_access"
+        ]
+      },
+      "interesting_entries": [
+
+      ]
+    },
+    {
+      "url": "http://localhost:8080/readme.html",
+      "to_s": "WordPress readme found: http://localhost:8080/readme.html",
+      "type": "readme",
+      "found_by": "Direct Access (Aggressive Detection)",
+      "confidence": 100,
+      "confirmed_by": {
+
+      },
+      "references": {
+
+      },
+      "interesting_entries": [
+
+      ]
+    },
+    {
+      "url": "http://localhost:8080/wp-signup.php",
+      "to_s": "This site seems to be a multisite",
+      "type": "multisite",
+      "found_by": "Direct Access (Aggressive Detection)",
+      "confidence": 100,
+      "confirmed_by": {
+
+      },
+      "references": {
+        "url": [
+          "http://codex.wordpress.org/Glossary#Multisite"
+        ]
+      },
+      "interesting_entries": [
+
+      ]
+    },
+    {
+      "url": "http://localhost:8080/wp-cron.php",
+      "to_s": "The external WP-Cron seems to be enabled: http://localhost:8080/wp-cron.php",
+      "type": "wp_cron",
+      "found_by": "Direct Access (Aggressive Detection)",
+      "confidence": 60,
+      "confirmed_by": {
+
+      },
+      "references": {
+        "url": [
+          "https://www.iplocation.net/defend-wordpress-from-ddos",
+          "https://github.com/wpscanteam/wpscan/issues/1299"
+        ]
+      },
+      "interesting_entries": [
+
+      ]
+    }
+  ],
+  "version": {
+    "number": "6.4.3",
+    "release_date": "2024-01-30",
+    "status": "insecure",
+    "found_by": "Rss Generator (Passive Detection)",
+    "confidence": 100,
+    "interesting_entries": [
+      "http://localhost:8080/?feed=rss2, <generator>https://wordpress.org/?v=6.4.3</generator>"
+    ],
+    "confirmed_by": {
+      "Rss Generator (Passive Detection)": {
+        "confidence": 80,
+        "interesting_entries": [
+          "http://localhost:8080/?feed=comments-rss2, <generator>https://wordpress.org/?v=6.4.3</generator>"
+        ]
+      }
+    },
+    "vulnerabilities": [
+
+    ]
+  },
+  "main_theme": {
+    "slug": "twentytwentyfour",
+    "location": "http://localhost:8080/wp-content/themes/twentytwentyfour/",
+    "latest_version": "1.4",
+    "last_updated": "2026-05-20T00:00:00Z",
+    "last_updated_relative": "14 days ago",
+    "last_updated_source": "WordPress.org",
+    "active_installs": 600000,
+    "outdated": true,
+    "readme_url": "http://localhost:8080/wp-content/themes/twentytwentyfour/readme.txt",
+    "directory_listing": false,
+    "error_log_url": null,
+    "style_url": "http://localhost:8080/wp-content/themes/twentytwentyfour/style.css",
+    "style_name": "Twenty Twenty-Four",
+    "style_uri": "https://wordpress.org/themes/twentytwentyfour/",
+    "description": "Twenty Twenty-Four is designed to be flexible, versatile and applicable to any website. Its collection of templates and patterns tailor to different needs, such as presenting a business, blogging and writing or showcasing work. A multitude of possibilities open up with just a few adjustments to color and typography. Twenty Twenty-Four comes with style variations and full page designs to help speed up the site building process, is fully compatible with the site editor, and takes advantage of new design tools introduced in WordPress 6.4.",
+    "author": "the WordPress team",
+    "author_uri": "https://wordpress.org",
+    "template": null,
+    "license": "GNU General Public License v2 or later",
+    "license_uri": "http://www.gnu.org/licenses/gpl-2.0.html",
+    "tags": "one-column, custom-colors, custom-menu, custom-logo, editor-style, featured-images, full-site-editing, block-patterns, rtl-language-support, sticky-post, threaded-comments, translation-ready, wide-blocks, block-styles, style-variations, accessibility-ready, blog, portfolio, news",
+    "text_domain": "twentytwentyfour",
+    "found_by": "Urls In Homepage (Passive Detection)",
+    "confidence": 8,
+    "interesting_entries": [
+
+    ],
+    "confirmed_by": {
+
+    },
+    "vulnerabilities": [
+
+    ],
+    "version": {
+      "number": "1.0",
+      "confidence": 80,
+      "found_by": "Style (Passive Detection)",
+      "interesting_entries": [
+        "http://localhost:8080/wp-content/themes/twentytwentyfour/style.css, Match: 'Version: 1.0'"
+      ],
+      "confirmed_by": {
+
+      }
+    },
+    "parents": [
+
+    ]
+  },
+  "plugins": {
+    "akismet": {
+      "slug": "akismet",
+      "location": "http://localhost:8080/wp-content/plugins/akismet/",
+      "latest_version": "5.7",
+      "last_updated": "2026-04-23T22:34:00Z",
+      "last_updated_relative": "1 month ago",
+      "last_updated_source": "WordPress.org",
+      "active_installs": 6000000,
+      "outdated": false,
+      "readme_url": false,
+      "directory_listing": false,
+      "error_log_url": null,
+      "found_by": "Known Locations (Aggressive Detection)",
+      "confidence": 80,
+      "interesting_entries": [
+        "http://localhost:8080/wp-content/plugins/akismet/, status: 403"
+      ],
+      "confirmed_by": {
+
+      },
+      "vulnerabilities": [
+
+      ],
+      "version": null
+    },
+    "woocommerce": {
+      "slug": "woocommerce",
+      "location": "http://localhost:8080/wp-content/plugins/woocommerce/",
+      "latest_version": "10.7.0",
+      "last_updated": "2026-05-27T17:54:00Z",
+      "last_updated_relative": "6 days ago",
+      "last_updated_source": "WordPress.org",
+      "active_installs": 7000000,
+      "outdated": true,
+      "readme_url": "http://localhost:8080/wp-content/plugins/woocommerce/readme.txt",
+      "directory_listing": false,
+      "error_log_url": null,
+      "found_by": "Known Locations (Aggressive Detection)",
+      "confidence": 80,
+      "interesting_entries": [
+        "http://localhost:8080/wp-content/plugins/woocommerce/, status: 403"
+      ],
+      "confirmed_by": {
+
+      },
+      "vulnerabilities": [
+
+      ],
+      "version": {
+        "number": "7.0.0",
+        "confidence": 100,
+        "found_by": "Readme - Stable Tag (Aggressive Detection)",
+        "interesting_entries": [
+          "http://localhost:8080/wp-content/plugins/woocommerce/readme.txt"
+        ],
+        "confirmed_by": {
+          "Readme - ChangeLog Section (Aggressive Detection)": {
+            "confidence": 50,
+            "interesting_entries": [
+              "http://localhost:8080/wp-content/plugins/woocommerce/readme.txt"
+            ]
+          }
+        }
+      }
+    },
+    "wordpress-seo": {
+      "slug": "wordpress-seo",
+      "location": "http://localhost:8080/wp-content/plugins/wordpress-seo/",
+      "latest_version": "27.6",
+      "last_updated": "2026-05-27T09:21:00Z",
+      "last_updated_relative": "7 days ago",
+      "last_updated_source": "WordPress.org",
+      "active_installs": 10000000,
+      "outdated": true,
+      "readme_url": "http://localhost:8080/wp-content/plugins/wordpress-seo/readme.txt",
+      "directory_listing": false,
+      "error_log_url": null,
+      "found_by": "Known Locations (Aggressive Detection)",
+      "confidence": 80,
+      "interesting_entries": [
+        "http://localhost:8080/wp-content/plugins/wordpress-seo/, status: 200"
+      ],
+      "confirmed_by": {
+
+      },
+      "vulnerabilities": [
+
+      ],
+      "version": {
+        "number": "19.0",
+        "confidence": 100,
+        "found_by": "Readme - Stable Tag (Aggressive Detection)",
+        "interesting_entries": [
+          "http://localhost:8080/wp-content/plugins/wordpress-seo/readme.txt"
+        ],
+        "confirmed_by": {
+          "Readme - ChangeLog Section (Aggressive Detection)": {
+            "confidence": 50,
+            "interesting_entries": [
+              "http://localhost:8080/wp-content/plugins/wordpress-seo/readme.txt"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "themes": {
+    "twentytwentyfour": {
+      "slug": "twentytwentyfour",
+      "location": "http://localhost:8080/wp-content/themes/twentytwentyfour/",
+      "latest_version": "1.4",
+      "last_updated": "2026-05-20T00:00:00Z",
+      "last_updated_relative": "14 days ago",
+      "last_updated_source": "WordPress.org",
+      "active_installs": 600000,
+      "outdated": true,
+      "readme_url": "http://localhost:8080/wp-content/themes/twentytwentyfour/readme.txt",
+      "directory_listing": false,
+      "error_log_url": null,
+      "style_url": "http://localhost:8080/wp-content/themes/twentytwentyfour/style.css",
+      "style_name": "Twenty Twenty-Four",
+      "style_uri": "https://wordpress.org/themes/twentytwentyfour/",
+      "description": "Twenty Twenty-Four is designed to be flexible, versatile and applicable to any website. Its collection of templates and patterns tailor to different needs, such as presenting a business, blogging and writing or showcasing work. A multitude of possibilities open up with just a few adjustments to color and typography. Twenty Twenty-Four comes with style variations and full page designs to help speed up the site building process, is fully compatible with the site editor, and takes advantage of new design tools introduced in WordPress 6.4.",
+      "author": "the WordPress team",
+      "author_uri": "https://wordpress.org",
+      "template": null,
+      "license": "GNU General Public License v2 or later",
+      "license_uri": "http://www.gnu.org/licenses/gpl-2.0.html",
+      "tags": "one-column, custom-colors, custom-menu, custom-logo, editor-style, featured-images, full-site-editing, block-patterns, rtl-language-support, sticky-post, threaded-comments, translation-ready, wide-blocks, block-styles, style-variations, accessibility-ready, blog, portfolio, news",
+      "text_domain": "twentytwentyfour",
+      "found_by": "Urls In Homepage (Passive Detection)",
+      "confidence": 100,
+      "interesting_entries": [
+
+      ],
+      "confirmed_by": {
+        "Known Locations (Aggressive Detection)": {
+          "confidence": 80,
+          "interesting_entries": [
+            "http://localhost:8080/wp-content/themes/twentytwentyfour/, status: 403"
+          ]
+        }
+      },
+      "vulnerabilities": [
+
+      ],
+      "version": {
+        "number": "1.0",
+        "confidence": 80,
+        "found_by": "Style (Passive Detection)",
+        "interesting_entries": [
+          "http://localhost:8080/wp-content/themes/twentytwentyfour/style.css, Match: 'Version: 1.0'"
+        ],
+        "confirmed_by": {
+
+        }
+      },
+      "parents": [
+
+      ]
+    },
+    "twentytwentythree": {
+      "slug": "twentytwentythree",
+      "location": "http://localhost:8080/wp-content/themes/twentytwentythree/",
+      "latest_version": "1.6",
+      "last_updated": "2024-11-13T00:00:00Z",
+      "last_updated_relative": "1 year ago",
+      "last_updated_source": "WordPress.org",
+      "active_installs": 300000,
+      "outdated": true,
+      "readme_url": "http://localhost:8080/wp-content/themes/twentytwentythree/readme.txt",
+      "directory_listing": false,
+      "error_log_url": null,
+      "style_url": "http://localhost:8080/wp-content/themes/twentytwentythree/style.css",
+      "style_name": "Twenty Twenty-Three",
+      "style_uri": "https://wordpress.org/themes/twentytwentythree",
+      "description": "Twenty Twenty-Three is designed to take advantage of the new design tools introduced in WordPress 6.1. With a clean, blank base as a starting point, this default theme includes ten diverse style variations created by members of the WordPress community. Whether you want to build a complex or incredibly simple website, you can do it quickly and intuitively through the bundled styles or dive into creation and full customization yourself.",
+      "author": "the WordPress team",
+      "author_uri": "https://wordpress.org",
+      "template": null,
+      "license": "GNU General Public License v2 or later",
+      "license_uri": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+      "tags": "one-column, custom-colors, custom-menu, custom-logo, editor-style, featured-images, full-site-editing, block-patterns, rtl-language-support, sticky-post, threaded-comments, translation-ready, wide-blocks, block-styles, style-variations, accessibility-ready, blog, portfolio, news",
+      "text_domain": "twentytwentythree",
+      "found_by": "Known Locations (Aggressive Detection)",
+      "confidence": 80,
+      "interesting_entries": [
+        "http://localhost:8080/wp-content/themes/twentytwentythree/, status: 403"
+      ],
+      "confirmed_by": {
+
+      },
+      "vulnerabilities": [
+
+      ],
+      "version": {
+        "number": "1.3",
+        "confidence": 80,
+        "found_by": "Style (Passive Detection)",
+        "interesting_entries": [
+          "http://localhost:8080/wp-content/themes/twentytwentythree/style.css, Match: 'Version: 1.3'"
+        ],
+        "confirmed_by": {
+
+        }
+      },
+      "parents": [
+
+      ]
+    },
+    "twentytwentytwo": {
+      "slug": "twentytwentytwo",
+      "location": "http://localhost:8080/wp-content/themes/twentytwentytwo/",
+      "latest_version": "2.1",
+      "last_updated": "2025-12-03T00:00:00Z",
+      "last_updated_relative": "6 months ago",
+      "last_updated_source": "WordPress.org",
+      "active_installs": 200000,
+      "outdated": true,
+      "readme_url": "http://localhost:8080/wp-content/themes/twentytwentytwo/readme.txt",
+      "directory_listing": false,
+      "error_log_url": null,
+      "style_url": "http://localhost:8080/wp-content/themes/twentytwentytwo/style.css",
+      "style_name": "Twenty Twenty-Two",
+      "style_uri": "https://wordpress.org/themes/twentytwentytwo/",
+      "description": "Built on a solidly designed foundation, Twenty Twenty-Two embraces the idea that everyone deserves a truly unique website. The theme’s subtle styles are inspired by the diversity and versatility of birds: its typography is lightweight yet strong, its color palette is drawn from nature, and its layout elements sit gently on the page. The true richness of Twenty Twenty-Two lies in its opportunity for customization. The theme is built to take advantage of the Site Editor features introduced in WordPress 5.9, which means that colors, typography, and the layout of every single page on your site can be customized to suit your vision. It also includes dozens of block patterns, opening the door to a wide range of professionally designed layouts in just a few clicks. Whether you’re building a single-page website, a blog, a business website, or a portfolio, Twenty Twenty-Two will help you create a site that is uniquely yours.",
+      "author": "the WordPress team",
+      "author_uri": "https://wordpress.org/",
+      "template": null,
+      "license": "GNU General Public License v2 or later",
+      "license_uri": "http://www.gnu.org/licenses/gpl-2.0.html",
+      "tags": "one-column, custom-colors, custom-menu, custom-logo, editor-style, featured-images, full-site-editing, block-patterns, rtl-language-support, sticky-post, threaded-comments, style-variations, wide-blocks, block-styles, accessibility-ready, blog, portfolio, news",
+      "text_domain": "twentytwentytwo",
+      "found_by": "Known Locations (Aggressive Detection)",
+      "confidence": 80,
+      "interesting_entries": [
+        "http://localhost:8080/wp-content/themes/twentytwentytwo/, status: 200"
+      ],
+      "confirmed_by": {
+
+      },
+      "vulnerabilities": [
+
+      ],
+      "version": {
+        "number": "1.6",
+        "confidence": 80,
+        "found_by": "Style (Passive Detection)",
+        "interesting_entries": [
+          "http://localhost:8080/wp-content/themes/twentytwentytwo/style.css, Match: 'Version: 1.6'"
+        ],
+        "confirmed_by": {
+
+        }
+      },
+      "parents": [
+
+      ]
+    }
+  },
+  "users": {
+    "admin": {
+      "id": null,
+      "found_by": "Author Posts - Display Name (Passive Detection)",
+      "confidence": 100,
+      "interesting_entries": [
+
+      ],
+      "confirmed_by": {
+        "Author Id Brute Forcing - Author Pattern (Aggressive Detection)": {
+          "confidence": 100,
+          "interesting_entries": [
+
+          ]
+        }
+      }
+    }
+  },
+  "vuln_api": {
+    "error": "No WPScan API Token given, as a result vulnerability data has not been output.\nYou can get a free API token with 25 daily requests by registering at https://wpscan.com/register"
+  },
+  "stop_time": 1780479978,
+  "elapsed": 226,
+  "requests_done": 3886,
+  "cached_requests": 25,
+  "response_status_codes": {
+    "200": 3867,
+    "403": 11,
+    "206": 8
+  },
+  "response_status_codes_warning": true,
+  "response_status_codes_warnings": [
+    "Too many client errors (4xx). This could indicate access restrictions, authentication issues, or WAF blocking"
+  ],
+  "data_sent": 890476,
+  "data_sent_humanised": "869.605 KB",
+  "data_received": 174000852,
+  "data_received_humanised": "165.94 MB",
+  "used_memory": 468963328,
+  "used_memory_humanised": "447.238 MB"
+}

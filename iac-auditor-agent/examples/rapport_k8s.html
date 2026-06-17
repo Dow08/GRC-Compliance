@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport d'Audit GRC : Kubernetes Cluster Hardening</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151c2c;
+            --border-color: #232d42;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success-color: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --warning-color: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.15);
+            --error-color: #ef4444;
+            --error-glow: rgba(239, 68, 68, 0.15);
+            --code-bg: #070a13;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-size: 28px; font-weight: 700; margin: 0 0 10px 0; letter-spacing: -0.5px; }
+        .subtitle { color: var(--text-muted); margin: 0; font-size: 16px; }
+        .badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .compliant { background-color: var(--success-glow); color: var(--success-color); border: 1px solid var(--success-color); }
+        .partial { background-color: var(--warning-glow); color: var(--warning-color); border: 1px solid var(--warning-color); }
+        .non-compliant { background-color: var(--error-glow); color: var(--error-color); border: 1px solid var(--error-color); }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            font-size: 18px; margin-top: 0; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 10px;
+        }
+        .meta-item { margin-bottom: 15px; }
+        .meta-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 4px; }
+        .meta-value { font-size: 14px; font-weight: 500; }
+        .risk-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+        .risk-low { background-color: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .risk-medium { background-color: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .risk-high { background-color: rgba(239, 68, 68, 0.2); color: var(--error-color); }
+        .gap-box {
+            background-color: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--error-color);
+            padding: 15px 20px; border-radius: 0 8px 8px 0; margin-bottom: 30px; font-size: 15px;
+        }
+        .gap-box.compliant-box { border-left: 4px solid var(--success-color); background-color: rgba(16, 185, 129, 0.05); }
+        pre { background-color: var(--code-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; overflow-x: auto; margin: 0; }
+        code { font-family: 'Courier New', Courier, monospace; font-size: 13.5px; color: #e5e7eb; }
+        .code-container { position: relative; }
+        .copy-btn {
+            position: absolute; top: 10px; right: 10px; background-color: var(--card-bg);
+            border: 1px solid var(--border-color); color: var(--text-color); padding: 4px 8px;
+            font-size: 11px; border-radius: 4px; cursor: pointer;
+        }
+        footer { text-align: center; margin-top: 50px; color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--border-color); padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Rapport d'Audit de Conformité GRC</h1>
+                <p class="subtitle">Analyse automatisée de configuration de sécurité</p>
+            </div>
+            <div>
+                <span class="badge non-compliant">NON CONFORME</span>
+            </div>
+        </header>
+        <div class="grid">
+            <div class="card">
+                <h2>Rapport d'Audit Technique</h2>
+                <div class="meta-label">Écarts techniques identifiés (Gaps)</div>
+                <div class="gap-box ">
+                    Missing NetworkPolicy to isolate the pod from other namespaces, leading to potential exposure and increased attack surface. Lack of resource limits (CPU/Memory) for containers, increasing risk of denial-of-service (DoS). Container security configuration with privileged execution mode (runAsNonRoot: false), system file modification (readOnlyRootFilesystem: false), and allowPrivilegeEscalation: true, poses a significant security risk.
+                </div>
+                <div class="meta-label" style="margin-bottom: 8px;">Plan de Remédiation Technique Préconisé</div>
+                <div class="code-container">
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('remediation-code').innerText)">Copier</button>
+                    <pre><code id="remediation-code">kubectl create -f &lt;path/to/networkpolicy.yaml&gt;</code></pre>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Métadonnées GRC</h2>
+                <div class="meta-item">
+                    <span class="meta-label">Actif Technologique</span>
+                    <span class="meta-value">Kubernetes Cluster Hardening</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Niveau de Risque</span>
+                    <span class="meta-value"><span class="risk-badge risk-high">RISQUE ÉLEVÉ</span></span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Règles ISO 27001</span>
+                    <span class="meta-value">ISO 27001:2022 A.8.20 (Network Security), ISO 27001:2022 A.8.22 (Web Filtering), ISO 27001:2022 A.8.12 (Data Leakage Prevention)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Exigences NIS2</span>
+                    <span class="meta-value">NIS2 Article 21 (Network Isolation & Access Policies)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">CVEs / CWEs Associés</span>
+                    <span class="meta-value" style="color: var(--warning-color); font-weight: bold;">CWE-284, CWE-521</span>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="margin-top: 30px;">
+            <h2>Configuration Source Évaluée</h2>
+            <pre><code># MANIFESTE KUBERNETES DE TEST - CONFIGURATION VULNÉRABLE (POUR AUDIT DE SÉCURITÉ)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-api-service
+  namespace: default
+  labels:
+    app: legacy-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: legacy-api
+  template:
+    metadata:
+      labels:
+        app: legacy-api
+    spec:
+      containers:
+        - name: legacy-api-container
+          image: legacy-api-image:v1.0.4
+          ports:
+            - containerPort: 8080
+
+          # INSECURITÉ : Pas de limites de ressources définies (risque de déni de service / DoS de l'hôte)
+          # resources:
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "512Mi"
+
+          # INSECURITÉ : Sécurité du conteneur manquante (exécution en tant que root par défaut, système de fichier en écriture)
+          securityContext:
+            privileged: true # Privilégié, accès complet à l'hôte ! (Extrêmement dangereux)
+            runAsNonRoot: false # Exécuté en tant que ROOT
+            readOnlyRootFilesystem: false # Système de fichier racine modifiable (écriture)
+            allowPrivilegeEscalation: true # Autorise l'élévation de privilèges
+
+---
+# INSECURITÉ : Pas de NetworkPolicy définie pour isoler ce pod des autres namespaces du cluster
+</code></pre>
+        </div>
+        <footer>
+            <p>Généré automatiquement par l'analyseur autonome GRC Cybersecurity Compliance Auditor.</p>
+        </footer>
+    </div>
+</body>
+</html>
