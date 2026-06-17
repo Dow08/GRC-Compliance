@@ -1,0 +1,586 @@
+# =============================================================================
+#  ARGUS CCM - controls.yaml  -  SOURCE DE VERITE DES CONTROLES
+# =============================================================================
+#
+#  ROLE DE CE FICHIER
+#  ------------------
+#  C'est le coeur du Continuous Controls Monitoring (CCM). Tout le reste en
+#  decoule :
+#    - les collecteurs (ccm/collectors/) savent QUELLE preuve produire ;
+#    - Splunk sait QUELLE requete executer pour calculer l'etat d'un controle ;
+#    - les dashboards affichent PASS / FAIL / EXCEPTION par controle ;
+#    - le score de posture agrege le tout (voir meta.scoring) ;
+#    - l'agent IA lit ce fichier + l'etat Splunk pour rediger le rapport de gaps.
+#
+#  Modifier ce fichier = faire evoluer le perimetre de conformite surveille.
+#  Ajouter un framework plus tard (DORA, SOC 2, ISO 42001) = ajouter des champs
+#  de mapping, sans toucher au moteur. C'est ce qui rend ARGUS reutilisable.
+#
+#  -------------------------------------------------------------------------
+#  SOCLE THEORIQUE (a connaitre, pas seulement a appliquer)
+#  -------------------------------------------------------------------------
+#  * CCM vs audit ponctuel : un audit ISO classique constate la conformite a
+#    l'instant T (une fois par an). Le CCM la MESURE en continu. La difference
+#    business : on detecte une DERIVE (drift) en heures, pas en mois.
+#
+#  * CONFORMITE != SECURITE. Etre conforme ISO/NIS2 ne prouve pas qu'on resiste
+#    a une attaque. C'est pourquoi chaque controle est aussi relié a MITRE
+#    ATT&CK (champ mitre_attack) : on passe d'une logique "checkbox" a une
+#    defense INFORMEE PAR LA MENACE (threat-informed defense). On sait non
+#    seulement "suis-je conforme ?" mais "contre QUELLE technique d'attaque
+#    ce controle me protege-t-il ?".
+#
+#  * MITRE ATT&CK : base de connaissances des Tactiques (le POURQUOI de
+#    l'attaquant : TA0001 Initial Access, TA0006 Credential Access...) et des
+#    Techniques (le COMMENT : T1110 Brute Force...). Mapper un controle a une
+#    technique = prouver qu'il a une utilite defensive concrete, pas seulement
+#    documentaire.
+#
+#  * ISO/IEC 27001:2022 - Annexe A : 93 controles en 4 themes :
+#       A.5 Organisationnels (37) | A.6 Personnes (8)
+#       A.7 Physiques (14)        | A.8 Technologiques (34)
+#    ARGUS ne mesure QUE l'observable depuis une infra qui tourne -> majorite
+#    de A.8 + quelques A.5. A.6/A.7 restent manuels (voir meta.perimetre).
+#
+#  * NIS2 - Article 21(2) : 10 mesures minimales (a -> j). Rappel :
+#       a) analyse de risque & politiques SI       f) evaluation de l'efficacite
+#       b) gestion des incidents                   g) cyber-hygiene & formation
+#       c) continuite, sauvegardes, reprise        h) cryptographie / chiffrement
+#       d) securite chaine d'approvisionnement     i) RH, controle d'acces, actifs
+#       e) acquisition/dev/maintenance + vulns     j) MFA & comms securisees
+#
+#  * SCORING (voir meta.scoring) : 12 etats PASS/FAIL ne sont pas une posture.
+#    Il faut une REGLE d'agregation defendable : score pondere par severite +
+#    regle de garde (un trou critique ne peut pas etre "vert"). Sinon le chiffre
+#    du dashboard ("87% conforme") est arbitraire - donc inopposable.
+#
+#  -------------------------------------------------------------------------
+#  SCHEMA D'UN CONTROLE (chaque champ a une raison d'etre)
+#  -------------------------------------------------------------------------
+#    id                 : identifiant interne ARGUS (stable, reference partout)
+#    titre              : libelle lisible
+#    iso27001_2022      : reference exacte Annexe A:2022
+#    theme              : Organisationnel | Personnes | Physique | Technologique
+#    nis2_art21         : lettre(s) de la mesure Art.21(2) couverte(s)
+#    mitre_attack       : technique(s) ATT&CK contree(s) -> threat-informed
+#    objectif           : ce que le controle vise (le "pourquoi" metier)
+#    ce_qui_est_mesure  : la traduction TECHNIQUE concrete (le "quoi")
+#    collecteur         : script ccm/collectors/ qui produit la preuve
+#    sourcetype         : sourcetype Splunk ou atterrit la preuve
+#    requete_splunk     : la SPL qui calcule l'etat (affinee en Phase 2)
+#    seuil              : regle PASS/FAIL (metrique + operateur + valeur)
+#    preuve_attendue    : artefact horodate+hashe stocke comme preuve (A.5.28)
+#    severite           : critique | elevee | moyenne (priorise + pondere le score)
+#    frequence          : cadence de collecte
+#    proprietaire       : responsable du controle (RACI - qui rend des comptes)
+#    runbook            : ref + action de remediation (fermer la boucle detecter->corriger)
+#    pourquoi           : note pedagogique courte (theorie -> docs/)
+#
+#  NB : la cible surveillee est la replique "TechShop SAS" du Lab 1
+#       (smsi-automation-lab). Roles fictifs : Marie Laurent (DG),
+#       Thomas Rivet (DSI), Sophie Blanc (DPO).
+# =============================================================================
+
+meta:
+  projet: ARGUS - Continuous Controls Monitoring
+  organisation_cible: TechShop SAS (PME e-commerce, replique du Lab 1)
+  version: "0.2.0"
+  date: "2026-06-17"
+  index_splunk: ccm
+  frameworks:
+    - ISO/IEC 27001:2022 (Annexe A)
+    - NIS2 - Directive (UE) 2022/2555, Article 21(2)
+    - MITRE ATT&CK (threat-informed mapping)
+  note_couverture: >
+    ARGUS mesure la part TECHNIQUEMENT OBSERVABLE des normes (essentiellement
+    A.8 + quelques A.5). Les controles humains (A.6) et physiques (A.7) restent
+    en evaluation manuelle - declare explicitement, jamais masque.
+
+  # --- Perimetre assume (decision documentee, pas un oubli) -----------------
+  perimetre:
+    principe: >
+      Un CCM ne mesure que ce qui EMET de la telemetrie depuis une infra qui
+      tourne (logs, scans, tests reseau). Ce qui n'a pas de source de donnees
+      observable n'est PAS automatisable - et on ne fabrique pas de fausse
+      preuve pour faire du tout-vert.
+    automatise:
+      - "A.8 Technologique : logs, scans Trivy/CIS, exposition reseau, TLS..."
+      - "A.5 partiel : A.5.24 (incidents), A.5.28 (preuves) car signaux techniques"
+    non_automatise:
+      A.6_Personnes:
+        nature: RH / humain
+        exemples_preuves: "attestations de formation (LMS), NDAs signes, procedure de depart"
+        pourquoi_exclu: "Aucun systeme RH/LMS dans le lab -> pas de source -> non mesurable"
+      A.7_Physique:
+        nature: physique / site
+        exemples_preuves: "logs de badgeuse, videosurveillance, registre visiteurs"
+        pourquoi_exclu: "Pas de site ni de badgeuse dans le lab -> pas de source -> non mesurable"
+    couverts_ailleurs: >
+      A.6 et A.7 restent couverts par PREUVES MANUELLES dans le SMSI du Lab 1
+      (smsi-automation-lab). Le CCM complete l'audit manuel, il ne le remplace pas.
+    extension_possible: >
+      Le moteur ARGUS POURRAIT s'y etendre des qu'une source existe : brancher
+      l'API d'un LMS (A.6.3 taux de formation) ou un log de controle d'acces
+      physique (A.7.2) suffirait. Non implemente ici : ce serait de la donnee
+      fabriquee, etiquetee "demo" - choix assume de rester sur du mesurable reel.
+
+  # --- Modele de score de posture (comment 12 PASS/FAIL -> un chiffre) -------
+  scoring:
+    methode: Score de conformite pondere par la severite.
+    formule: >
+      score = 100 * ( somme des poids des controles PASS )
+                   / ( somme des poids des controles applicables )
+    poids_par_severite: "voir la section 'severites' (critique=3, elevee=2, moyenne=1)"
+    traitement_exception: >
+      Un controle en EXCEPTION (derogation valide, non expiree) est compte comme
+      PASS pour le score (risque accepte et trace) MAIS affiche separement et
+      jamais confondu avec un vrai PASS.
+    regle_de_garde: >
+      Tout controle de severite CRITIQUE en FAIL plafonne la posture globale a
+      69 (rouge), quel que soit le score calcule. On ne peut pas etre "vert" en
+      laissant un trou critique ouvert : c'est ce qui rend le chiffre opposable.
+    bandes_de_posture:
+      vert: ">= 90 et aucun controle critique en FAIL"
+      orange: "70 a 89 et aucun controle critique en FAIL"
+      rouge: "< 70  OU  >= 1 controle critique en FAIL"
+    tendance: >
+      Le score est historise a chaque cycle -> on suit la DERIVE dans le temps
+      (KRI). Une posture qui baisse est un signal, meme au-dessus de 90.
+
+# Niveaux de severite -> pilotent l'ordre de remediation ET le poids au score.
+severites:
+  critique: { poids: 3, sla_remediation_h: 24 }
+  elevee:   { poids: 2, sla_remediation_h: 72 }
+  moyenne:  { poids: 1, sla_remediation_h: 168 }
+
+controles:
+
+  # --- A.8.8 -----------------------------------------------------------------
+  - id: ARG-VULN-001
+    titre: Gestion des vulnerabilites techniques
+    iso27001_2022: A.8.8
+    theme: Technologique
+    nis2_art21: [e]
+    mitre_attack:
+      - { id: T1190, nom: "Exploit Public-Facing Application", tactique: "Initial Access (TA0001)" }
+      - { id: T1203, nom: "Exploitation for Client Execution", tactique: "Execution (TA0002)" }
+    objectif: >
+      Aucune image en production ne doit embarquer de vulnerabilite connue
+      critique ou elevee non traitee.
+    ce_qui_est_mesure: Scan Trivy des images Docker en cours d'execution.
+    collecteur: collectors/collect_trivy.py
+    sourcetype: argus:trivy
+    requete_splunk: >
+      index=ccm sourcetype=argus:trivy severity IN ("CRITICAL","HIGH")
+      | stats count AS vulns by image
+    seuil:
+      metrique: vulns_critical_high
+      operateur: "=="
+      valeur: 0
+      pass_si: "0 vulnerabilite CRITICAL/HIGH non corrigee sur les images actives"
+    preuve_attendue: Rapport Trivy JSON horodate + hash SHA-256, par image.
+    severite: critique
+    frequence: horaire
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-VULN-001.md
+      action: "Rebuild de l'image avec base patchee, re-scan, redeploiement; si non patchable -> derogation tracee."
+    pourquoi: >
+      Pilier du shift-left + du runtime. Une CVE critique non patchee est le
+      vecteur n.1 de compromission (exploitation de vulnerabilites connues).
+
+  # --- A.8.9 -----------------------------------------------------------------
+  - id: ARG-CONF-001
+    titre: Gestion de la configuration (durcissement)
+    iso27001_2022: A.8.9
+    theme: Technologique
+    nis2_art21: [e, a]
+    mitre_attack:
+      - { id: T1611, nom: "Escape to Host", tactique: "Privilege Escalation (TA0004)" }
+      - { id: T1610, nom: "Deploy Container", tactique: "Defense Evasion (TA0005)" }
+    objectif: >
+      Les conteneurs et hotes respectent une configuration durcie de reference
+      (CIS Docker Benchmark) - pas de derive non autorisee.
+    ce_qui_est_mesure: Resultats Docker Bench Security / audit de conf vs CIS.
+    collecteur: collectors/collect_docker_bench.py
+    sourcetype: argus:dockerbench
+    requete_splunk: >
+      index=ccm sourcetype=argus:dockerbench result="WARN"
+      | stats count AS ecarts by check_id
+    seuil:
+      metrique: ecarts_cis
+      operateur: "<="
+      valeur: 2
+      pass_si: "<= 2 ecarts CIS mineurs, 0 ecart sur les checks classes critiques"
+    preuve_attendue: Sortie Docker Bench horodatee + hash, mappee CIS->ISO.
+    severite: elevee
+    frequence: quotidienne
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-CONF-001.md
+      action: "Corriger le parametre durci (non-root, read-only, capabilities), re-auditer; ecart legitime -> derogation."
+    pourquoi: >
+      La derive de configuration (config drift) est silencieuse : un -p qui
+      expose un port, un mode privilegie en trop... Le CCM la rend visible.
+      Un conteneur mal durci ouvre la voie a l'evasion vers l'hote (T1611).
+
+  # --- A.8.5 -----------------------------------------------------------------
+  - id: ARG-AUTH-001
+    titre: Authentification securisee
+    iso27001_2022: A.8.5
+    theme: Technologique
+    nis2_art21: [j]
+    mitre_attack:
+      - { id: T1110, nom: "Brute Force", tactique: "Credential Access (TA0006)" }
+      - { id: T1110.004, nom: "Credential Stuffing", tactique: "Credential Access (TA0006)" }
+    objectif: >
+      Detecter les attaques sur l'authentification (brute force, credential
+      stuffing) et verifier l'application du MFA sur les acces sensibles.
+    ce_qui_est_mesure: Logs d'authentification - taux d'echecs / source.
+    collecteur: collectors/collect_auth_logs.py
+    sourcetype: argus:auth
+    requete_splunk: >
+      index=ccm sourcetype=argus:auth action=failure
+      | stats count AS echecs by src_ip
+      | where echecs > 10
+    seuil:
+      metrique: sources_brute_force
+      operateur: "=="
+      valeur: 0
+      pass_si: "Aucune source avec > 10 echecs d'authentification / fenetre"
+    preuve_attendue: Echantillon de logs auth + regle de detection active.
+    severite: critique
+    frequence: temps_reel
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-AUTH-001.md
+      action: "Bloquer l'IP source (fail2ban/WAF), forcer MFA, verifier les comptes cibles; investiguer si compromission."
+    pourquoi: >
+      NIS2 (j) impose le MFA. Cote technique, on demontre la DETECTION du brute
+      force (T1110) - c'est le pont entre GRC (exigence) et SOC (telemetrie).
+
+  # --- A.8.7 -----------------------------------------------------------------
+  - id: ARG-MALW-001
+    titre: Protection contre les programmes malveillants
+    iso27001_2022: A.8.7
+    theme: Technologique
+    nis2_art21: [g]
+    mitre_attack:
+      - { id: T1204, nom: "User Execution", tactique: "Execution (TA0002)" }
+      - { id: T1486, nom: "Data Encrypted for Impact (ransomware)", tactique: "Impact (TA0040)" }
+      - { id: T1105, nom: "Ingress Tool Transfer", tactique: "Command and Control (TA0011)" }
+    objectif: >
+      Une protection anti-malware est active et fonctionnelle sur la cible.
+    ce_qui_est_mesure: Statut de l'AV (ClamAV) + detection d'un fichier test EICAR.
+    collecteur: collectors/collect_malware.py
+    sourcetype: argus:malware
+    requete_splunk: >
+      index=ccm sourcetype=argus:malware
+      | stats latest(av_status) AS statut, latest(eicar_detected) AS test
+    seuil:
+      metrique: av_operationnel
+      operateur: "=="
+      valeur: true
+      pass_si: "AV actif ET fichier test EICAR correctement detecte"
+    preuve_attendue: Statut AV + log de detection EICAR horodate.
+    severite: elevee
+    frequence: quotidienne
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-MALW-001.md
+      action: "Redemarrer/mettre a jour l'AV, relancer le test EICAR, scanner la cible; isoler si detection reelle."
+    pourquoi: >
+      EICAR = fichier de test standard inoffensif. Le detecter prouve que la
+      chaine fonctionne SANS utiliser un vrai malware (bonne pratique de test).
+
+  # --- A.8.15 ----------------------------------------------------------------
+  - id: ARG-LOG-001
+    titre: Journalisation
+    iso27001_2022: A.8.15
+    theme: Technologique
+    nis2_art21: [f]
+    mitre_attack:
+      - { id: T1070, nom: "Indicator Removal (effacement de logs)", tactique: "Defense Evasion (TA0005)" }
+      - { id: T1562, nom: "Impair Defenses", tactique: "Defense Evasion (TA0005)" }
+    objectif: >
+      Tous les composants de la cible produisent des logs et les transmettent
+      a la collecte - pas de zone aveugle.
+    ce_qui_est_mesure: Presence et fraicheur des logs de chaque source attendue.
+    collecteur: collectors/collect_log_health.py
+    sourcetype: argus:loghealth
+    requete_splunk: >
+      | tstats latest(_time) AS dernier_log WHERE index=ccm by sourcetype
+      | eval age_min=round((now()-dernier_log)/60,1)
+      | where age_min > 30
+    seuil:
+      metrique: sources_silencieuses
+      operateur: "=="
+      valeur: 0
+      pass_si: "Toutes les sources attendues ont logue dans les 30 dernieres min"
+    preuve_attendue: Inventaire des sources attendues vs sources actives.
+    severite: elevee
+    frequence: horaire
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-LOG-001.md
+      action: "Identifier la source muette, redemarrer le forwarder/collecteur; si arret suspect -> traiter en incident (eviction)."
+    pourquoi: >
+      "On ne surveille pas ce qu'on ne journalise pas." Une source qui se tait =
+      panne OU effacement par un attaquant (T1070). Les deux sont graves.
+
+  # --- A.8.16 ----------------------------------------------------------------
+  - id: ARG-MON-001
+    titre: Surveillance des activites
+    iso27001_2022: A.8.16
+    theme: Technologique
+    nis2_art21: [f]
+    mitre_attack:
+      - { id: T1562, nom: "Impair Defenses (regles desactivees)", tactique: "Defense Evasion (TA0005)" }
+    objectif: >
+      Les regles de correlation (detection) sont actives et evaluees en continu.
+    ce_qui_est_mesure: Etat des correlation searches Splunk d'ARGUS.
+    collecteur: natif Splunk (REST /services/saved/searches)
+    sourcetype: argus:monitoring
+    requete_splunk: >
+      | rest /services/saved/searches
+      | search title="ARGUS - *" disabled=0
+      | stats count AS regles_actives
+    seuil:
+      metrique: regles_actives
+      operateur: ">="
+      valeur: 5
+      pass_si: ">= 5 regles de detection ARGUS actives et non desactivees"
+    preuve_attendue: Liste des correlation searches actives + derniere execution.
+    severite: moyenne
+    frequence: quotidienne
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-MON-001.md
+      action: "Reactiver les regles manquantes, verifier qui/quand les a desactivees (piste de sabotage), restaurer depuis le versionnage."
+    pourquoi: >
+      Mesurer le surveillant lui-meme : un SIEM aux regles desactivees (T1562)
+      donne une fausse assurance. Le CCM s'auto-controle.
+
+  # --- A.8.20 ----------------------------------------------------------------
+  - id: ARG-NET-001
+    titre: Securite des reseaux (surface d'exposition)
+    iso27001_2022: A.8.20
+    theme: Technologique
+    nis2_art21: [e]
+    mitre_attack:
+      - { id: T1190, nom: "Exploit Public-Facing Application", tactique: "Initial Access (TA0001)" }
+      - { id: T1046, nom: "Network Service Discovery", tactique: "Discovery (TA0007)" }
+    objectif: >
+      Seuls les ports strictement necessaires sont exposes par la cible.
+    ce_qui_est_mesure: Ports/services exposes vs liste blanche attendue.
+    collecteur: collectors/collect_exposed_ports.py
+    sourcetype: argus:netexposure
+    requete_splunk: >
+      index=ccm sourcetype=argus:netexposure expected=false
+      | stats values(port) AS ports_non_autorises by container
+    seuil:
+      metrique: ports_non_autorises
+      operateur: "=="
+      valeur: 0
+      pass_si: "Aucun port expose hors de la liste blanche definie"
+    preuve_attendue: Cartographie des ports exposes + liste blanche de reference.
+    severite: critique
+    frequence: horaire
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-NET-001.md
+      action: "Fermer le port non autorise (revue compose/Terraform), redeployer; documenter si exposition legitime -> derogation."
+    pourquoi: >
+      La surface d'attaque = ce qui est expose. Moins de services exposes = moins
+      de cibles pour l'exploitation (T1190) et la decouverte (T1046).
+
+  # --- A.8.22 ----------------------------------------------------------------
+  - id: ARG-NET-002
+    titre: Cloisonnement des reseaux (segmentation)
+    iso27001_2022: A.8.22
+    theme: Technologique
+    nis2_art21: [e]
+    mitre_attack:
+      - { id: T1210, nom: "Exploitation of Remote Services", tactique: "Lateral Movement (TA0008)" }
+      - { id: T1021, nom: "Remote Services", tactique: "Lateral Movement (TA0008)" }
+    objectif: >
+      La base de donnees n'est joignable QUE par le web applicatif, jamais
+      directement depuis l'exterieur (segmentation type VLAN).
+    ce_qui_est_mesure: Test d'accessibilite reseau entre segments overlay Docker.
+    collecteur: collectors/collect_segmentation.py
+    sourcetype: argus:segmentation
+    requete_splunk: >
+      index=ccm sourcetype=argus:segmentation test="db_depuis_exterieur"
+      | stats latest(reachable) AS joignable
+    seuil:
+      metrique: db_exposee
+      operateur: "=="
+      valeur: false
+      pass_si: "La DB est INACCESSIBLE depuis le segment externe"
+    preuve_attendue: Matrice de tests inter-segments (attendu vs constate).
+    severite: critique
+    frequence: quotidienne
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-NET-002.md
+      action: "Corriger la regle reseau overlay/firewall, re-tester la matrice; si chemin legitime requis -> restreindre + tracer."
+    pourquoi: >
+      Simulation de VLAN via reseaux overlay Swarm. La segmentation casse le
+      mouvement lateral (T1210/T1021) : si le web tombe, la DB n'est pas nue.
+
+  # --- A.8.24 ----------------------------------------------------------------
+  - id: ARG-CRYPTO-001
+    titre: Utilisation de la cryptographie (TLS)
+    iso27001_2022: A.8.24
+    theme: Technologique
+    nis2_art21: [h]
+    mitre_attack:
+      - { id: T1040, nom: "Network Sniffing", tactique: "Credential Access (TA0006)" }
+      - { id: T1557, nom: "Adversary-in-the-Middle", tactique: "Credential Access (TA0006)" }
+    objectif: >
+      Les flux exposes sont chiffres avec un protocole et des suites a jour.
+    ce_qui_est_mesure: Version TLS et validite du certificat sur le front web.
+    collecteur: collectors/collect_tls.py
+    sourcetype: argus:tls
+    requete_splunk: >
+      index=ccm sourcetype=argus:tls
+      | stats latest(tls_version) AS version, latest(cert_valide) AS cert
+    seuil:
+      metrique: tls_conforme
+      operateur: "=="
+      valeur: true
+      pass_si: "TLS >= 1.2, aucun protocole obsolete (SSLv3/TLS1.0/1.1), cert valide"
+    preuve_attendue: Empreinte du certificat + versions/suites negociees.
+    severite: elevee
+    frequence: quotidienne
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-CRYPTO-001.md
+      action: "Desactiver les protocoles obsoletes cote serveur, renouveler le cert si expire, re-tester (ex: testssl.sh)."
+    pourquoi: >
+      NIS2 (h) exige le chiffrement. TLS 1.0/1.1 sont obsoletes (deprecies IETF).
+      Un flux en clair expose au sniffing (T1040) et au MITM (T1557).
+
+  # --- A.8.13 ----------------------------------------------------------------
+  - id: ARG-BKP-001
+    titre: Sauvegarde des informations
+    iso27001_2022: A.8.13
+    theme: Technologique
+    nis2_art21: [c]
+    mitre_attack:
+      - { id: T1486, nom: "Data Encrypted for Impact (ransomware)", tactique: "Impact (TA0040)" }
+      - { id: T1490, nom: "Inhibit System Recovery", tactique: "Impact (TA0040)" }
+      - { id: T1485, nom: "Data Destruction", tactique: "Impact (TA0040)" }
+    objectif: >
+      Les sauvegardes s'executent avec succes et sont integres (restaurables).
+    ce_qui_est_mesure: Statut du dernier job de backup + verification d'integrite.
+    collecteur: collectors/collect_backup.py
+    sourcetype: argus:backup
+    requete_splunk: >
+      index=ccm sourcetype=argus:backup
+      | stats latest(status) AS statut, latest(integrity_ok) AS integrite,
+              latest(_time) AS dernier
+    seuil:
+      metrique: backup_sain
+      operateur: "=="
+      valeur: true
+      pass_si: "Dernier backup < 24h, statut=success, controle d'integrite OK"
+    preuve_attendue: Journal du job + hash de l'archive (chaine d'integrite).
+    severite: critique
+    frequence: quotidienne
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-BKP-001.md
+      action: "Relancer le job, tester une RESTAURATION reelle (pas juste le statut), verifier le hash; alimente le PRI/PRA."
+    pourquoi: >
+      NIS2 (c) - continuite. Un backup non teste n'est pas un backup. Dernier
+      rempart contre le ransomware (T1486) et l'inhibition de reprise (T1490).
+
+  # --- A.5.28 ----------------------------------------------------------------
+  - id: ARG-EVID-001
+    titre: Collecte des preuves (integrite)
+    iso27001_2022: A.5.28
+    theme: Organisationnel
+    nis2_art21: [f]
+    mitre_attack:
+      - { id: T1070, nom: "Indicator Removal", tactique: "Defense Evasion (TA0005)" }
+      - { id: T1565, nom: "Data Manipulation", tactique: "Impact (TA0040)" }
+    objectif: >
+      Chaque preuve produite par ARGUS est horodatee et inviolable (hash),
+      pour etre opposable a un auditeur.
+    ce_qui_est_mesure: Verification de la chaine de hash des preuves stockees.
+    collecteur: collectors/verify_evidence_integrity.py
+    sourcetype: argus:evidence
+    requete_splunk: >
+      index=ccm sourcetype=argus:evidence hash_verified=false
+      | stats count AS preuves_alterees
+    seuil:
+      metrique: preuves_alterees
+      operateur: "=="
+      valeur: 0
+      pass_si: "Aucune preuve dont le hash ne correspond plus (non alteree)"
+    preuve_attendue: Registre des preuves (chemin, hash, horodatage, source).
+    severite: elevee
+    frequence: quotidienne
+    proprietaire: Thomas Rivet (DSI)
+    runbook:
+      ref: runbooks/RUN-EVID-001.md
+      action: "Isoler la preuve alteree, restaurer depuis le stockage WORM/backup, investiguer l'acces (qui/quand)."
+    pourquoi: >
+      Une preuve qu'on peut modifier (T1565) ne prouve rien. Hash + horodatage =
+      WORM logique. C'est ce qui transforme une "donnee" en "preuve d'audit".
+
+  # --- A.5.24 ----------------------------------------------------------------
+  - id: ARG-INC-001
+    titre: Gestion des incidents (preparation & reaction)
+    iso27001_2022: A.5.24
+    theme: Organisationnel
+    nis2_art21: [b]
+    mitre_attack:
+      - { id: "—", nom: "Capacite de REPONSE transverse (toutes tactiques)", tactique: "Response / N-A" }
+    objectif: >
+      Toute alerte de severite haute genere un incident trace, avec mesure des
+      delais de detection et de reaction (MTTD / MTTR).
+    ce_qui_est_mesure: Alertes -> tickets d'incident, et delais associes.
+    collecteur: collectors/collect_incidents.py
+    sourcetype: argus:incident
+    requete_splunk: >
+      index=ccm sourcetype=argus:incident severity=high
+      | eval mttd=detect_time-event_time, mttr=resolve_time-detect_time
+      | stats avg(mttd) AS mttd_moyen, avg(mttr) AS mttr_moyen,
+              count(eval(ticket_id="")) AS sans_ticket
+    seuil:
+      metrique: alertes_sans_ticket
+      operateur: "=="
+      valeur: 0
+      pass_si: "Toute alerte haute a un ticket; MTTD/MTTR sous les seuils cibles"
+    preuve_attendue: Journal alerte->ticket + horodatages MTTD/MTTR.
+    severite: elevee
+    frequence: temps_reel
+    proprietaire: Thomas Rivet (DSI), appui Sophie Blanc (DPO) si donnees personnelles
+    runbook:
+      ref: runbooks/RUN-INC-001.md
+      action: "Ouvrir le ticket, qualifier, contenir; si breach RGPD -> notifier CNIL 72h; si NIS2 -> CSIRT/ANSSI 24h (alerte precoce)."
+    pourquoi: >
+      NIS2 (b) + notification 24h (alerte precoce) / 72h. Mesurer MTTD/MTTR
+      transforme la securite en indicateur pilotable (KRI), pas en intuition.
+      Ce controle n'est pas lie a UNE technique : c'est la reaction transverse.
+
+# =============================================================================
+#  DEROGATIONS / EXCEPTIONS (acceptation du risque - ISO 27001 clause 6 & 8)
+#  -------------------------------------------------------------------------
+#  Un controle peut etre legitimement en FAIL si le risque est ACCEPTE et
+#  trace : on ne masque pas le rouge, on le QUALIFIE. Le dashboard affiche
+#  alors "exception acceptee" (et non "echec"). Toute derogation a un
+#  proprietaire, une justification et une DATE D'EXPIRATION (revue obligatoire).
+#  Pour le score : une exception valide compte comme PASS (voir meta.scoring).
+#  Exemple ci-dessous (vide par defaut) :
+# =============================================================================
+derogations: []
+  # - controle_id: ARG-CONF-001
+  #   ecart: check_id 5.25 (conteneur en mode privilegie pour le collecteur)
+  #   justification: "Acces docker.sock requis - monte en lecture seule"
+  #   proprietaire: Thomas Rivet (DSI)
+  #   date_acceptation: "2026-06-17"
+  #   date_expiration: "2026-12-17"
+  #   risque_residuel: moyen
